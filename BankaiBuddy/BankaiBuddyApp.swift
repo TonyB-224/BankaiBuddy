@@ -1,17 +1,21 @@
-//
-//  BankaiBuddyApp.swift
-//  BankaiBuddy
-//
-//  Created by user942908 on 4/4/26.
-//
-
 import SwiftUI
+import FirebaseCore
 
 @main
 struct BankaiBuddyApp: App {
+    @State private var auth = AuthViewModel()
+    @State private var library = LibraryStore()
+
+    init() {
+        FirebaseApp.configure()
+    }
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
+                .environment(auth)
+                .environment(library)
+                .tint(.indigo)
         }
     }
 }
