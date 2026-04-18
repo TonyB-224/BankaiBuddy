@@ -6,6 +6,12 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		5DC7E0E82F9303DD00DEB292 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 5DC7E0E72F9303DD00DEB292 /* FirebaseAnalytics */; };
+		5DC7E0EA2F9303DD00DEB292 /* FirebaseAuthCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = 5DC7E0E92F9303DD00DEB292 /* FirebaseAuthCombine-Community */; };
+		5DC7E0ED2F93059A00DEB292 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 5DC7E0EC2F93059A00DEB292 /* FirebaseFirestore */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		5D20F5D02F8180B500207049 /* BankaiBuddy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BankaiBuddy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +29,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5DC7E0E82F9303DD00DEB292 /* FirebaseAnalytics in Frameworks */,
+				5DC7E0EA2F9303DD00DEB292 /* FirebaseAuthCombine-Community in Frameworks */,
+				5DC7E0ED2F93059A00DEB292 /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -33,6 +42,7 @@
 			isa = PBXGroup;
 			children = (
 				5D20F5D22F8180B500207049 /* BankaiBuddy */,
+				5DC7E0EB2F93059A00DEB292 /* Frameworks */,
 				5D20F5D12F8180B500207049 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -43,6 +53,13 @@
 				5D20F5D02F8180B500207049 /* BankaiBuddy.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		5DC7E0EB2F93059A00DEB292 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -65,6 +82,9 @@
 			);
 			name = BankaiBuddy;
 			packageProductDependencies = (
+				5DC7E0E72F9303DD00DEB292 /* FirebaseAnalytics */,
+				5DC7E0E92F9303DD00DEB292 /* FirebaseAuthCombine-Community */,
+				5DC7E0EC2F93059A00DEB292 /* FirebaseFirestore */,
 			);
 			productName = BankaiBuddy;
 			productReference = 5D20F5D02F8180B500207049 /* BankaiBuddy.app */;
@@ -94,6 +114,9 @@
 			);
 			mainGroup = 5D20F5C72F8180B500207049;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				5DC7E0E62F9303DD00DEB292 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 5D20F5D12F8180B500207049 /* Products */;
 			projectDirPath = "";
@@ -328,6 +351,35 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		5DC7E0E62F9303DD00DEB292 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.12.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		5DC7E0E72F9303DD00DEB292 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5DC7E0E62F9303DD00DEB292 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		5DC7E0E92F9303DD00DEB292 /* FirebaseAuthCombine-Community */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5DC7E0E62F9303DD00DEB292 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = "FirebaseAuthCombine-Community";
+		};
+		5DC7E0EC2F93059A00DEB292 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5DC7E0E62F9303DD00DEB292 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 5D20F5C82F8180B500207049 /* Project object */;
 }

@@ -17,3 +17,4 @@ struct RootView: View {
         .animation(.smooth, value: auth.state)
     }
 }
+

@@ -30,9 +30,7 @@ final class AuthViewModel {
         }
     }
 
-    deinit {
-        if let handle { Auth.auth().removeStateDidChangeListener(handle) }
-    }
+   
 
     func signIn(email: String, password: String) async {
         guard validate(email: email, password: password) else { return }

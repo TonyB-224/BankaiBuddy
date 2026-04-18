@@ -29,9 +29,6 @@ final class LibraryStore {
         }
     }
 
-    deinit {
-        if let authHandle { Auth.auth().removeStateDidChangeListener(authHandle) }
-    }
 
     func list(_ kind: ListKind) -> [Anime] {
         switch kind {
