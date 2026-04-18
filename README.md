@@ -1,49 +1,25 @@
-# BankaiBuddy
+# BankaiBuddy ⚔️
 
-An anime tracker with Firebase-backed auth and per-user Watched / Need to Watch / Favorites lists.
+> Your personal anime sidekick. Because keeping mental tabs on 47 series you’re “definitely going to finish” stopped working a long time ago.
 
-## Setup
+BankaiBuddy is an iOS app built as a school project to help users keep track of anime they’ve watched, want to watch, and genuinely love. It uses Firebase for authentication and cloud syncing, plus the Jikan API for anime data.
 
-### 1. Add Firebase via Swift Package Manager
+No spreadsheets. No notes app chaos. No forgetting that one show you swore you were about to start.
 
-In Xcode: **File → Add Package Dependencies…**
+## Features
 
-- URL: `https://github.com/firebase/firebase-ios-sdk`
-- Dependency Rule: Up to Next Major Version
-- Add these products to the `BankaiBuddy` target:
-  - `FirebaseAuth`
-  - `FirebaseFirestore`
+-  **Create an account / sign in** with email and password
+-  **Search anime** using the Jikan API
+-  **Organize your library** into:
+  - Watched
+  - Need to Watch
+  - Favorites
+-  **Sync lists across devices** with Firestore
+- **View profile info** and sign out anytime
 
-### 2. Create a Firebase project
+## Built With
 
-1. Go to [console.firebase.google.com](https://console.firebase.google.com) and create a project.
-2. Add an iOS app with bundle ID `TonyB-224.BankaiBuddy` (matches the existing project).
-3. Download `GoogleService-Info.plist`.
-4. Drag it into the `BankaiBuddy/` folder in Xcode. Make sure "Copy items if needed" is checked and the `BankaiBuddy` target is selected.
-
-### 3. Enable Email/Password auth
-
-Firebase Console → **Authentication → Sign-in method → Email/Password → Enable**.
-
-### 4. Create a Firestore database
-
-Firebase Console → **Firestore Database → Create database**. Start in **production mode**, then replace the rules with the contents of `firestore.rules` in this folder.
-
-## Architecture
-
-- `BankaiBuddyApp` — configures Firebase, injects `AuthViewModel` and `LibraryStore` into the environment.
-- `RootView` — routes between `AuthView` and `MainTabView` based on auth state.
-- `AuthViewModel` — wraps `FirebaseAuth`, exposes session state, sign in/up/out, password reset, and friendly error messages.
-- `LibraryStore` — listens to per-user Firestore subcollections (`watched`, `watching`, `favorites`), toggles membership.
-- `JikanService` — hits the free [Jikan API](https://jikan.moe) for search and top airing. No key required.
-- `MainTabView` — four tabs with `.tabBarMinimizeBehavior(.onScrollDown)` so the bar tucks away on scroll.
-
-## Data shape
-
-```
-users/{uid}/watched/{malId}    → Anime
-users/{uid}/watching/{malId}   → Anime
-users/{uid}/favorites/{malId}  → Anime
-```
-
-Each `Anime` document stores `id`, `title`, `imageURL`, `synopsis`, `score`, `episodes`, `year`.
+- **SwiftUI**
+- **Firebase Authentication**
+- **Firebase Firestore**
+- **Jikan API**
