@@ -8,8 +8,22 @@ struct Anime: Identifiable, Codable, Hashable {
     let score: Double?
     let episodes: Int?
     let year: Int?
+    let malURL: String?
+    let titleJapanese: String?
+    let genres: [String]?
+    let streamingLinks: [StreamingLink]?
 
     var posterURL: URL? { imageURL.flatMap(URL.init) }
+    var detailURL: URL? { malURL.flatMap(URL.init) }
+    var streamableLinks: [StreamingLink] { streamingLinks ?? [] }
+}
+
+struct StreamingLink: Codable, Hashable, Identifiable {
+    let name: String
+    let url: String
+
+    var id: String { "\(name)-\(url)" }
+    var destination: URL? { URL(string: url) }
 }
 
 enum ListKind: String, Codable, CaseIterable, Identifiable {

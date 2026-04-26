@@ -22,6 +22,13 @@ enum JikanService {
         return try await fetch(components.url!)
     }
 
+    static func fullDetails(for anime: Anime) async throws -> Anime {
+        let url = base.appendingPathComponent("anime/\(anime.id)/full")
+        let (data, _) = try await URLSession.shared.data(from: url)
+        let decoded = try JSONDecoder().decode(JikanSingleResponse.self, from: data)
+        return decoded.data.asAnime
+    }
+
     private static func fetch(_ url: URL) async throws -> [Anime] {
         let (data, _) = try await URLSession.shared.data(from: url)
         let decoded = try JSONDecoder().decode(JikanResponse.self, from: data)
@@ -33,15 +40,23 @@ private struct JikanResponse: Decodable {
     let data: [JikanAnime]
 }
 
+private struct JikanSingleResponse: Decodable {
+    let data: JikanAnime
+}
+
 private struct JikanAnime: Decodable {
     let mal_id: Int
+    let url: String?
     let title: String
     let title_english: String?
+    let title_japanese: String?
     let synopsis: String?
     let score: Double?
     let episodes: Int?
     let year: Int?
     let images: Images?
+    let genres: [JikanNamedResource]?
+    let streaming: [JikanNamedResource]?
 
     struct Images: Decodable {
         let jpg: Image?
@@ -59,7 +74,16 @@ private struct JikanAnime: Decodable {
             synopsis: synopsis,
             score: score,
             episodes: episodes,
-            year: year
+            year: year,
+            malURL: url,
+            titleJapanese: title_japanese,
+            genres: genres?.map(\.name),
+            streamingLinks: streaming?.map { StreamingLink(name: $0.name, url: $0.url) }
         )
     }
+}
+
+private struct JikanNamedResource: Decodable {
+    let name: String
+    let url: String
 }
