@@ -58,6 +58,13 @@ struct LibraryView: View {
     }
 
     private var emptyMessage: String {
-        "Search for anime and tap \(Image(systemName: kind.symbol)) to add it here."
+        switch kind {
+        case .watched:
+            "Search for anime and tap Watched to log what you have finished."
+        case .watching:
+            "Search for anime and tap Need to Watch to build your queue."
+        case .favorites:
+            "Search for anime and tap Favorites to save the series you love."
+        }
     }
 }
