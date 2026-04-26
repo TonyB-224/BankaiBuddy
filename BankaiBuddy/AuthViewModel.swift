@@ -64,6 +64,30 @@ final class AuthViewModel {
         }
     }
 
+    func deleteAccount() async -> Bool {
+        guard let user = Auth.auth().currentUser else {
+            errorMessage = "No signed-in account found."
+            return false
+        }
+
+        isWorking = true
+        errorMessage = nil
+        defer { isWorking = false }
+
+        do {
+            try await user.delete()
+            return true
+        } catch {
+            let code = AuthErrorCode(rawValue: (error as NSError).code)
+            if code == .requiresRecentLogin {
+                errorMessage = "For security, sign out and sign back in before deleting this account."
+            } else {
+                errorMessage = friendlyMessage(for: error)
+            }
+            return false
+        }
+    }
+
     func sendPasswordReset(email: String) async {
         guard !email.isEmpty else {
             errorMessage = "Enter your email first."

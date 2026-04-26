@@ -4,21 +4,26 @@ struct SearchView: View {
     @Binding var searchText: String
     @State private var results: [Anime] = []
     @State private var isLoading = false
+    @State private var searchError: String?
     @State private var selected: Anime?
     @State private var searchTask: Task<Void, Never>?
+
+    private let quickSearches = ["Solo Leveling", "One Piece", "Frieren", "Jujutsu Kaisen", "Demon Slayer"]
 
     var body: some View {
         NavigationStack {
             Group {
                 if searchText.isEmpty && results.isEmpty {
-                    ContentUnavailableView(
-                        "Find your next series",
-                        systemImage: "magnifyingglass",
-                        description: Text("Search by title, character, or studio.")
-                    )
+                    discoveryState
                 } else if isLoading {
                     ProgressView().controlSize(.large)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let searchError {
+                    ContentUnavailableView(
+                        "Search hit a snag",
+                        systemImage: "wifi.exclamationmark",
+                        description: Text(searchError)
+                    )
                 } else if results.isEmpty {
                     ContentUnavailableView.search(text: searchText)
                 } else {
@@ -37,6 +42,7 @@ struct SearchView: View {
             }
             .onChange(of: searchText) { _, newValue in
                 searchTask?.cancel()
+                searchError = nil
                 guard !newValue.trimmingCharacters(in: .whitespaces).isEmpty else {
                     results = []
                     return
@@ -50,13 +56,45 @@ struct SearchView: View {
         }
     }
 
+    private var discoveryState: some View {
+        VStack(spacing: 18) {
+            ContentUnavailableView(
+                "Find your next series",
+                systemImage: "magnifyingglass",
+                description: Text("Search by title, character, studio, or try a global fan favorite.")
+            )
+            .fixedSize(horizontal: false, vertical: true)
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Quick jumps")
+                    .font(.headline)
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 130), spacing: 10)], spacing: 10) {
+                    ForEach(quickSearches, id: \.self) { title in
+                        Button {
+                            searchText = title
+                        } label: {
+                            Label(title, systemImage: "sparkle.magnifyingglass")
+                                .font(.footnote.weight(.semibold))
+                                .frame(maxWidth: .infinity, minHeight: 42)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(BrandKit.indigo)
+                    }
+                }
+            }
+            .padding(.horizontal)
+        }
+    }
+
     private func performSearch(_ query: String) async {
         isLoading = true
+        searchError = nil
         defer { isLoading = false }
         do {
             results = try await JikanService.search(query)
         } catch {
             results = []
+            searchError = error.localizedDescription
         }
     }
 }
