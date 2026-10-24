@@ -113,26 +113,30 @@ jobs:
 
       - name: Unify generated module maps across packages
         run: |
-          # Xcode expects each dependent project's GeneratedModuleMaps dir
+          # Xcode expects each dependent target's GeneratedModuleMaps dir
           # to contain its dependencies' modulemaps, but for SPM binary
           # packages it never creates those cross-package copies: a
           # modulemap exists only in its own package's dir, while the
           # dependent target's compile/scan looks for it in its own
-          # project's dir. The first pass generates every package's own
-          # modulemaps, so copy each one into every other package's dir
-          # for the same SDK variant, filling only files that are missing.
-          # Generated modulemaps use absolute header paths, so sharing the
-          # file across dirs does not change what it resolves to.
+          # project's dir. The same applies to the app target itself,
+          # whose dir lives under the workspace build dir. Each pass
+          # generates more modulemaps than the last, so copy every
+          # generated modulemap into every dir that needs it for the
+          # same SDK variant, filling only files that are missing.
+          # Generated modulemaps use absolute header paths, so sharing
+          # the file across dirs does not change what it resolves to.
           DD="$(ls -d ~/Library/Developer/Xcode/DerivedData/BankaiBuddy-*/SourcePackages/checkouts 2>/dev/null | head -1)"
           if [ -z "$DD" ] || [ ! -d "$DD" ]; then echo "no SPM checkouts found"; exit 1; fi
           for variant in iphonesimulator iphoneos; do
-            for src in "$DD"/*/build/GeneratedModuleMaps-"$variant"/*.modulemap; do
+            MAPS="$(find "$DD" -path "*/build/GeneratedModuleMaps-$variant/*.modulemap" 2>/dev/null || true)"
+            [ -n "$MAPS" ] || continue
+            mkdir -p "$GITHUB_WORKSPACE/build/GeneratedModuleMaps-$variant"
+            DIRS="$(find "$DD" "$GITHUB_WORKSPACE/build" ~/Library/Developer/Xcode/DerivedData/BankaiBuddy-*/Build -type d -name "GeneratedModuleMaps-$variant" 2>/dev/null || true)"
+            echo "$MAPS" | while read -r src; do
               [ -f "$src" ] || continue
               name="$(basename "$src")"
-              for pkg in "$DD"/*/; do
-                [ -d "$pkg" ] || continue
-                dir="${pkg}build/GeneratedModuleMaps-$variant"
-                mkdir -p "$dir"
+              echo "$DIRS" | while read -r dir; do
+                [ -d "$dir" ] || continue
                 [ -f "$dir/$name" ] || cp "$src" "$dir/$name"
               done
             done
@@ -159,26 +163,30 @@ jobs:
 
       - name: Unify generated module maps across packages
         run: |
-          # Xcode expects each dependent project's GeneratedModuleMaps dir
+          # Xcode expects each dependent target's GeneratedModuleMaps dir
           # to contain its dependencies' modulemaps, but for SPM binary
           # packages it never creates those cross-package copies: a
           # modulemap exists only in its own package's dir, while the
           # dependent target's compile/scan looks for it in its own
-          # project's dir. The first pass generates every package's own
-          # modulemaps, so copy each one into every other package's dir
-          # for the same SDK variant, filling only files that are missing.
-          # Generated modulemaps use absolute header paths, so sharing the
-          # file across dirs does not change what it resolves to.
+          # project's dir. The same applies to the app target itself,
+          # whose dir lives under the workspace build dir. Each pass
+          # generates more modulemaps than the last, so copy every
+          # generated modulemap into every dir that needs it for the
+          # same SDK variant, filling only files that are missing.
+          # Generated modulemaps use absolute header paths, so sharing
+          # the file across dirs does not change what it resolves to.
           DD="$(ls -d ~/Library/Developer/Xcode/DerivedData/BankaiBuddy-*/SourcePackages/checkouts 2>/dev/null | head -1)"
           if [ -z "$DD" ] || [ ! -d "$DD" ]; then echo "no SPM checkouts found"; exit 1; fi
           for variant in iphonesimulator iphoneos; do
-            for src in "$DD"/*/build/GeneratedModuleMaps-"$variant"/*.modulemap; do
+            MAPS="$(find "$DD" -path "*/build/GeneratedModuleMaps-$variant/*.modulemap" 2>/dev/null || true)"
+            [ -n "$MAPS" ] || continue
+            mkdir -p "$GITHUB_WORKSPACE/build/GeneratedModuleMaps-$variant"
+            DIRS="$(find "$DD" "$GITHUB_WORKSPACE/build" ~/Library/Developer/Xcode/DerivedData/BankaiBuddy-*/Build -type d -name "GeneratedModuleMaps-$variant" 2>/dev/null || true)"
+            echo "$MAPS" | while read -r src; do
               [ -f "$src" ] || continue
               name="$(basename "$src")"
-              for pkg in "$DD"/*/; do
-                [ -d "$pkg" ] || continue
-                dir="${pkg}build/GeneratedModuleMaps-$variant"
-                mkdir -p "$dir"
+              echo "$DIRS" | while read -r dir; do
+                [ -d "$dir" ] || continue
                 [ -f "$dir/$name" ] || cp "$src" "$dir/$name"
               done
             done
@@ -217,26 +225,30 @@ jobs:
 
       - name: Unify generated module maps across packages
         run: |
-          # Xcode expects each dependent project's GeneratedModuleMaps dir
+          # Xcode expects each dependent target's GeneratedModuleMaps dir
           # to contain its dependencies' modulemaps, but for SPM binary
           # packages it never creates those cross-package copies: a
           # modulemap exists only in its own package's dir, while the
           # dependent target's compile/scan looks for it in its own
-          # project's dir. The first pass generates every package's own
-          # modulemaps, so copy each one into every other package's dir
-          # for the same SDK variant, filling only files that are missing.
-          # Generated modulemaps use absolute header paths, so sharing the
-          # file across dirs does not change what it resolves to.
+          # project's dir. The same applies to the app target itself,
+          # whose dir lives under the workspace build dir. Each pass
+          # generates more modulemaps than the last, so copy every
+          # generated modulemap into every dir that needs it for the
+          # same SDK variant, filling only files that are missing.
+          # Generated modulemaps use absolute header paths, so sharing
+          # the file across dirs does not change what it resolves to.
           DD="$(ls -d ~/Library/Developer/Xcode/DerivedData/BankaiBuddy-*/SourcePackages/checkouts 2>/dev/null | head -1)"
           if [ -z "$DD" ] || [ ! -d "$DD" ]; then echo "no SPM checkouts found"; exit 1; fi
           for variant in iphonesimulator iphoneos; do
-            for src in "$DD"/*/build/GeneratedModuleMaps-"$variant"/*.modulemap; do
+            MAPS="$(find "$DD" -path "*/build/GeneratedModuleMaps-$variant/*.modulemap" 2>/dev/null || true)"
+            [ -n "$MAPS" ] || continue
+            mkdir -p "$GITHUB_WORKSPACE/build/GeneratedModuleMaps-$variant"
+            DIRS="$(find "$DD" "$GITHUB_WORKSPACE/build" ~/Library/Developer/Xcode/DerivedData/BankaiBuddy-*/Build -type d -name "GeneratedModuleMaps-$variant" 2>/dev/null || true)"
+            echo "$MAPS" | while read -r src; do
               [ -f "$src" ] || continue
               name="$(basename "$src")"
-              for pkg in "$DD"/*/; do
-                [ -d "$pkg" ] || continue
-                dir="${pkg}build/GeneratedModuleMaps-$variant"
-                mkdir -p "$dir"
+              echo "$DIRS" | while read -r dir; do
+                [ -d "$dir" ] || continue
                 [ -f "$dir/$name" ] || cp "$src" "$dir/$name"
               done
             done
@@ -257,26 +269,30 @@ jobs:
 
       - name: Unify generated module maps across packages
         run: |
-          # Xcode expects each dependent project's GeneratedModuleMaps dir
+          # Xcode expects each dependent target's GeneratedModuleMaps dir
           # to contain its dependencies' modulemaps, but for SPM binary
           # packages it never creates those cross-package copies: a
           # modulemap exists only in its own package's dir, while the
           # dependent target's compile/scan looks for it in its own
-          # project's dir. The first pass generates every package's own
-          # modulemaps, so copy each one into every other package's dir
-          # for the same SDK variant, filling only files that are missing.
-          # Generated modulemaps use absolute header paths, so sharing the
-          # file across dirs does not change what it resolves to.
+          # project's dir. The same applies to the app target itself,
+          # whose dir lives under the workspace build dir. Each pass
+          # generates more modulemaps than the last, so copy every
+          # generated modulemap into every dir that needs it for the
+          # same SDK variant, filling only files that are missing.
+          # Generated modulemaps use absolute header paths, so sharing
+          # the file across dirs does not change what it resolves to.
           DD="$(ls -d ~/Library/Developer/Xcode/DerivedData/BankaiBuddy-*/SourcePackages/checkouts 2>/dev/null | head -1)"
           if [ -z "$DD" ] || [ ! -d "$DD" ]; then echo "no SPM checkouts found"; exit 1; fi
           for variant in iphonesimulator iphoneos; do
-            for src in "$DD"/*/build/GeneratedModuleMaps-"$variant"/*.modulemap; do
+            MAPS="$(find "$DD" -path "*/build/GeneratedModuleMaps-$variant/*.modulemap" 2>/dev/null || true)"
+            [ -n "$MAPS" ] || continue
+            mkdir -p "$GITHUB_WORKSPACE/build/GeneratedModuleMaps-$variant"
+            DIRS="$(find "$DD" "$GITHUB_WORKSPACE/build" ~/Library/Developer/Xcode/DerivedData/BankaiBuddy-*/Build -type d -name "GeneratedModuleMaps-$variant" 2>/dev/null || true)"
+            echo "$MAPS" | while read -r src; do
               [ -f "$src" ] || continue
               name="$(basename "$src")"
-              for pkg in "$DD"/*/; do
-                [ -d "$pkg" ] || continue
-                dir="${pkg}build/GeneratedModuleMaps-$variant"
-                mkdir -p "$dir"
+              echo "$DIRS" | while read -r dir; do
+                [ -d "$dir" ] || continue
                 [ -f "$dir/$name" ] || cp "$src" "$dir/$name"
               done
             done
