@@ -87,13 +87,19 @@ jobs:
           [[ -n "$DEVICE" && "$DEVICE" != "null" ]] || { xcrun simctl list devices available; exit 1; }
           echo "SIM_DEVICE_NAME=$DEVICE" >> "$GITHUB_ENV"
           echo "Building for simulator device: $DEVICE"
+          # ARCHS=arm64: even with a named device destination, the package
+          # targets still computed x86_64 slices (ONLY_ACTIVE_ARCH warning
+          # persisted), and only the x86_64 grpcppWrapper scans fail.
+          # Forcing arm64 removes the x86_64 slice entirely; the runner and
+          # simulator are arm64, so nothing real is lost.
           xcodebuild build \
             -project BankaiBuddy.xcodeproj \
             -target BankaiBuddy \
             -configuration Debug \
-            -sdk iphonesimulator \
             -destination "platform=iOS Simulator,name=$DEVICE" \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO \
+            ARCHS=arm64 \
+            ONLY_ACTIVE_ARCH=YES
 
       - name: Archive Release (unsigned, compile check only)
         run: >
