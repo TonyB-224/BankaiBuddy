@@ -329,15 +329,36 @@ jobs:
           xcrun simctl bootstatus "$UDID" -b
           APP_PATH="$(find build/Debug-iphonesimulator -maxdepth 1 -name 'BankaiBuddy.app' | head -1)"
           [[ -n "$APP_PATH" ]] || { echo "BankaiBuddy.app not found"; exit 1; }
+          mkdir -p screenshots
           xcrun simctl install booted "$APP_PATH"
+          # Plain launch first: the auth screen, no screenshot mode.
           xcrun simctl launch booted TonyB-224.BankaiBuddy
           sleep 10
-          xcrun simctl io booted screenshot launch.png
+          xcrun simctl io booted screenshot screenshots/01-auth.png
+          xcrun simctl terminate booted TonyB-224.BankaiBuddy
+          # Screenshot-mode launches: one per screen, each showing that
+          # screen loaded with real Jikan data. The app is relaunched
+          # (not reinstalled) with the tab/query as launch arguments.
+          shot() {
+            if [ -n "$2" ]; then
+              xcrun simctl launch booted TonyB-224.BankaiBuddy -BankaiBuddyScreenshotMode -BankaiBuddyScreenshotTab "$1" -BankaiBuddyScreenshotQuery "$2"
+            else
+              xcrun simctl launch booted TonyB-224.BankaiBuddy -BankaiBuddyScreenshotMode -BankaiBuddyScreenshotTab "$1"
+            fi
+            sleep 18
+            xcrun simctl io booted screenshot "screenshots/$3"
+            xcrun simctl terminate booted TonyB-224.BankaiBuddy
+          }
+          shot home "" 02-home.png
+          shot search "Naruto" 03-search.png
+          shot detail "Naruto" 04-detail.png
+          shot library "" 05-library.png
+          shot profile "" 06-profile.png
 
-      - name: Upload launch screenshot
+      - name: Upload screenshots
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: simulator-launch-${{ github.run_id }}
-          path: launch.png
+          name: simulator-screenshots-${{ github.run_id }}
+          path: screenshots/
           retention-days: 14
