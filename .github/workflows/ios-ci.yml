@@ -107,7 +107,8 @@ jobs:
             -destination "platform=iOS Simulator,name=$DEVICE" \
             CODE_SIGNING_ALLOWED=NO \
             ARCHS=arm64 \
-            ONLY_ACTIVE_ARCH=YES
+            ONLY_ACTIVE_ARCH=YES \
+            SWIFT_ENABLE_EXPLICIT_MODULES=NO
 
       - name: Archive Release (unsigned, compile check only)
         run: >
@@ -118,6 +119,7 @@ jobs:
           -sdk iphoneos
           -archivePath build/BankaiBuddy.xcarchive
           CODE_SIGNING_ALLOWED=NO
+          SWIFT_ENABLE_EXPLICIT_MODULES=NO
 
       - name: Boot simulator and launch app (proof it fires off)
         run: |
