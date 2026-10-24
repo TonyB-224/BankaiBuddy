@@ -155,6 +155,52 @@ jobs:
             ARCHS=arm64 \
             ONLY_ACTIVE_ARCH=YES \
             SWIFT_ENABLE_EXPLICIT_MODULES=NO \
+            CLANG_ENABLE_EXPLICIT_MODULES=NO || echo "second-pass Debug build done; unifying module maps and retrying"
+
+      - name: Unify generated module maps across packages
+        run: |
+          # Xcode expects each dependent project's GeneratedModuleMaps dir
+          # to contain its dependencies' modulemaps, but for SPM binary
+          # packages it never creates those cross-package copies: a
+          # modulemap exists only in its own package's dir, while the
+          # dependent target's compile/scan looks for it in its own
+          # project's dir. The first pass generates every package's own
+          # modulemaps, so copy each one into every other package's dir
+          # for the same SDK variant, filling only files that are missing.
+          # Generated modulemaps use absolute header paths, so sharing the
+          # file across dirs does not change what it resolves to.
+          DD="$(ls -d ~/Library/Developer/Xcode/DerivedData/BankaiBuddy-*/SourcePackages/checkouts 2>/dev/null | head -1)"
+          if [ -z "$DD" ] || [ ! -d "$DD" ]; then echo "no SPM checkouts found"; exit 1; fi
+          for variant in iphonesimulator iphoneos; do
+            for src in "$DD"/*/build/GeneratedModuleMaps-"$variant"/*.modulemap; do
+              [ -f "$src" ] || continue
+              name="$(basename "$src")"
+              for pkg in "$DD"/*/; do
+                [ -d "$pkg" ] || continue
+                dir="${pkg}build/GeneratedModuleMaps-$variant"
+                mkdir -p "$dir"
+                [ -f "$dir/$name" ] || cp "$src" "$dir/$name"
+              done
+            done
+          done
+          echo "module-map unification done"
+
+      - name: Build Debug for simulator, third pass (unsigned)
+        run: |
+          DEVICE="$(xcrun simctl list devices available --json             | jq -r '[.devices[] | .[] | select(.isAvailable and (.name | startswith("iPhone")))] | first | .name')"
+          [[ -n "$DEVICE" && "$DEVICE" != "null" ]] || { xcrun simctl list devices available; exit 1; }
+          echo "SIM_DEVICE_NAME=$DEVICE" >> "$GITHUB_ENV"
+          echo "Building for simulator device: $DEVICE"
+          xcodebuild build \
+            -project BankaiBuddy.xcodeproj \
+            -target BankaiBuddy \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination "platform=iOS Simulator,name=$DEVICE" \
+            CODE_SIGNING_ALLOWED=NO \
+            ARCHS=arm64 \
+            ONLY_ACTIVE_ARCH=YES \
+            SWIFT_ENABLE_EXPLICIT_MODULES=NO \
             CLANG_ENABLE_EXPLICIT_MODULES=NO
 
       - name: Archive Release, first pass (unsigned, compile check only)
@@ -198,6 +244,46 @@ jobs:
           echo "module-map unification done"
 
       - name: Archive Release, second pass (unsigned, compile check only)
+        run: >
+          xcodebuild archive
+          -project BankaiBuddy.xcodeproj
+          -target BankaiBuddy
+          -configuration Release
+          -sdk iphoneos
+          -archivePath build/BankaiBuddy.xcarchive
+          CODE_SIGNING_ALLOWED=NO
+          SWIFT_ENABLE_EXPLICIT_MODULES=NO
+          CLANG_ENABLE_EXPLICIT_MODULES=NO || echo "second-pass archive done; unifying module maps and retrying"
+
+      - name: Unify generated module maps across packages
+        run: |
+          # Xcode expects each dependent project's GeneratedModuleMaps dir
+          # to contain its dependencies' modulemaps, but for SPM binary
+          # packages it never creates those cross-package copies: a
+          # modulemap exists only in its own package's dir, while the
+          # dependent target's compile/scan looks for it in its own
+          # project's dir. The first pass generates every package's own
+          # modulemaps, so copy each one into every other package's dir
+          # for the same SDK variant, filling only files that are missing.
+          # Generated modulemaps use absolute header paths, so sharing the
+          # file across dirs does not change what it resolves to.
+          DD="$(ls -d ~/Library/Developer/Xcode/DerivedData/BankaiBuddy-*/SourcePackages/checkouts 2>/dev/null | head -1)"
+          if [ -z "$DD" ] || [ ! -d "$DD" ]; then echo "no SPM checkouts found"; exit 1; fi
+          for variant in iphonesimulator iphoneos; do
+            for src in "$DD"/*/build/GeneratedModuleMaps-"$variant"/*.modulemap; do
+              [ -f "$src" ] || continue
+              name="$(basename "$src")"
+              for pkg in "$DD"/*/; do
+                [ -d "$pkg" ] || continue
+                dir="${pkg}build/GeneratedModuleMaps-$variant"
+                mkdir -p "$dir"
+                [ -f "$dir/$name" ] || cp "$src" "$dir/$name"
+              done
+            done
+          done
+          echo "module-map unification done"
+
+      - name: Archive Release, third pass (unsigned, compile check only)
         run: >
           xcodebuild archive
           -project BankaiBuddy.xcodeproj
