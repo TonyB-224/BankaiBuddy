@@ -33,6 +33,7 @@ struct AuthView: View {
         }
         .foregroundStyle(.white)
         .animation(.smooth, value: auth.errorMessage)
+        .animation(.smooth, value: auth.noticeMessage)
         .animation(.smooth, value: mode)
     }
 
@@ -86,6 +87,14 @@ struct AuthView: View {
                 Text(message)
                     .font(.footnote)
                     .foregroundStyle(.red)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .transition(.opacity)
+            }
+
+            if let notice = auth.noticeMessage {
+                Text(notice)
+                    .font(.footnote)
+                    .foregroundStyle(BrandKit.mint)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .transition(.opacity)
             }

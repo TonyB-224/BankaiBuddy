@@ -12,7 +12,7 @@ struct ProfileView: View {
                     HStack(spacing: 14) {
                         Image(systemName: "person.crop.circle.fill")
                             .font(.system(size: 48))
-                            .foregroundStyle(.indigo)
+                            .foregroundStyle(BrandKit.indigo)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(displayName).font(.headline)
                             if let email = emailAddress {

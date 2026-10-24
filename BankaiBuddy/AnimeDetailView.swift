@@ -39,12 +39,22 @@ struct AnimeDetailView: View {
     }
 
     private var poster: some View {
-        AsyncImage(url: displayAnime.posterURL) { image in
-            image.resizable().scaledToFit()
-        } placeholder: {
-            Rectangle().fill(.quaternary)
-                .frame(height: 320)
-                .overlay(ProgressView())
+        AsyncImage(url: displayAnime.posterURL) { phase in
+            switch phase {
+            case .success(let image):
+                image.resizable().scaledToFit()
+            case .empty:
+                Rectangle().fill(.quaternary)
+                    .frame(height: 320)
+                    .overlay(ProgressView())
+            case .failure:
+                Rectangle().fill(.quaternary)
+                    .frame(height: 320)
+                    .overlay(Image(systemName: "photo").foregroundStyle(.secondary))
+            @unknown default:
+                Rectangle().fill(.quaternary)
+                    .frame(height: 320)
+            }
         }
         .frame(maxHeight: 320)
         .clipShape(.rect(cornerRadius: 18, style: .continuous))
@@ -129,7 +139,7 @@ struct AnimeDetailView: View {
                 }
 
                 if links.isEmpty {
-                    Text("Checking official stream homes...")
+                    Text(isLoadingDetails ? "Checking official stream homes..." : "No official stream links found.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 } else {

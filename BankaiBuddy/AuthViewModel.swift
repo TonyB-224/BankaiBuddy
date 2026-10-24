@@ -13,6 +13,7 @@ final class AuthViewModel {
 
     private(set) var state: State = .unknown
     var errorMessage: String?
+    var noticeMessage: String?
     var isWorking = false
 
     private var handle: AuthStateDidChangeListenerHandle?
@@ -36,6 +37,7 @@ final class AuthViewModel {
         guard validate(email: email, password: password) else { return }
         isWorking = true
         errorMessage = nil
+        noticeMessage = nil
         do {
             _ = try await Auth.auth().signIn(withEmail: email, password: password)
         } catch {
@@ -48,6 +50,7 @@ final class AuthViewModel {
         guard validate(email: email, password: password) else { return }
         isWorking = true
         errorMessage = nil
+        noticeMessage = nil
         do {
             _ = try await Auth.auth().createUser(withEmail: email, password: password)
         } catch {
@@ -71,9 +74,10 @@ final class AuthViewModel {
         }
         isWorking = true
         errorMessage = nil
+        noticeMessage = nil
         do {
             try await Auth.auth().sendPasswordReset(withEmail: email)
-            errorMessage = "Reset email sent. Check your inbox."
+            noticeMessage = "Reset email sent. Check your inbox."
         } catch {
             errorMessage = friendlyMessage(for: error)
         }

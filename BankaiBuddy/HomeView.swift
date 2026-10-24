@@ -139,6 +139,13 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity, minHeight: 200)
             } else if let loadError {
                 ContentUnavailableView("Couldn't load", systemImage: "wifi.exclamationmark", description: Text(loadError))
+            } else if topAiring.isEmpty {
+                ContentUnavailableView(
+                    "Nothing airing right now",
+                    systemImage: "tv.slash",
+                    description: Text("Check back soon for fresh picks.")
+                )
+                .frame(maxWidth: .infinity, minHeight: 200)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 14) {

@@ -17,7 +17,7 @@ struct BankaiBuddyApp: App {
             RootView()
                 .environment(auth)
                 .environment(library)
-                .tint(.indigo)
+                .tint(BrandKit.indigo)
         }
     }
 }
