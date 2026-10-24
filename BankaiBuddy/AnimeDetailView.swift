@@ -31,6 +31,21 @@ struct AnimeDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             .task { await loadDetailsIfNeeded() }
             .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    if let detailURL = displayAnime.detailURL {
+                        ShareLink(
+                            item: detailURL,
+                            subject: Text(displayAnime.title),
+                            message: Text(displayAnime.title)
+                        ) {
+                            Image(systemName: "square.and.arrow.up")
+                        }
+                    } else {
+                        ShareLink(item: displayAnime.title) {
+                            Image(systemName: "square.and.arrow.up")
+                        }
+                    }
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
