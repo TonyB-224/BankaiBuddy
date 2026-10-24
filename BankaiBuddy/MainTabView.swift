@@ -20,7 +20,7 @@ struct MainTabView: View {
             Tab("Home", systemImage: "house.fill", value: "home") {
                 HomeView()
             }
-            Tab("Search", systemImage: "magnifyingglass", role: .search, value: "search") {
+            Tab("Search", systemImage: "magnifyingglass", value: "search", role: .search) {
                 SearchView(searchText: $searchText)
             }
             Tab("Library", systemImage: "books.vertical.fill", value: "library") {
