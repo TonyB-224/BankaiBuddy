@@ -1,0 +1,110 @@
+# BankaiBuddy iOS CI — free macOS build gate + simulator proof (no Mac required)
+#
+# Drop this file at .github/workflows/ios-ci.yml in the TonyB-224/BankaiBuddy repo.
+# Public repo => unlimited free GitHub-hosted macOS minutes, so every push/PR gets
+# a real Xcode compile without owning a Mac.
+#
+# What it does:
+#   1. Resolves the Firebase iOS SDK Swift package
+#   2. Compiles Debug for the iOS Simulator (unsigned)
+#   3. Compiles Release as an unsigned archive (validates the shipping config)
+#   4. Boots the iOS Simulator on the runner, installs the Debug build, launches
+#      it, and captures a launch screenshot as proof the app actually fires off.
+#      The screenshot is uploaded as a workflow artifact.
+#
+# What it does NOT do:
+#   - No code signing, no .ipa, no App Store upload. Signing still needs an
+#     Apple Developer Program membership ($99/yr) plus a signing certificate
+#     stored as a repo secret — that's the remaining blocker, not the build box.
+#   - No interactive Simulator window: the runner is headless, so proof comes back
+#     as files (screenshot artifact), not a live screen you can tap.
+#   - The screenshot shows the launch screen only. Driving to deeper screens
+#     (Search, Detail, Library) needs a UI test target, which this workflow
+#     deliberately does not invent — the launch proof is what matters here.
+#     First launch may show the sign-in screen (auth is required); that still
+#     counts as a successful launch.
+#
+# Project facts baked in (verified against the repo 2026-10-14, rechecked 2026-10-24):
+#   - BankaiBuddy.xcodeproj at repo root, target "BankaiBuddy"
+#   - Bundle ID TonyB-224.BankaiBuddy, iOS deployment target 26.4, Swift 5.0
+#   - SPM dependency: https://github.com/firebase/firebase-ios-sdk
+#   - No shared schemes committed, so CI builds by -target instead of -scheme.
+#     (If you share the scheme in Xcode later, -scheme works too.)
+#   - Pinned to macos-26 + Xcode 26.4: the 26.4 deployment target needs the
+#     newest SDK, and an older runner image would fail the build outright.
+
+name: iOS CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 26.4
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: "26.4"
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Resolve Swift packages (Firebase)
+        run: >
+          xcodebuild -resolvePackageDependencies
+          -project BankaiBuddy.xcodeproj
+          -clonedSourcePackagesDirPath SourcePackages
+
+      - name: Build Debug for simulator (unsigned)
+        run: >
+          xcodebuild clean build
+          -project BankaiBuddy.xcodeproj
+          -target BankaiBuddy
+          -configuration Debug
+          -sdk iphonesimulator
+          -destination 'generic/platform=iOS Simulator'
+          CODE_SIGNING_ALLOWED=NO
+          -clonedSourcePackagesDirPath SourcePackages
+
+      - name: Archive Release (unsigned, compile check only)
+        run: >
+          xcodebuild archive
+          -project BankaiBuddy.xcodeproj
+          -target BankaiBuddy
+          -configuration Release
+          -sdk iphoneos
+          -archivePath build/BankaiBuddy.xcarchive
+          CODE_SIGNING_ALLOWED=NO
+          -clonedSourcePackagesDirPath SourcePackages
+
+      - name: Boot simulator and launch app (proof it fires off)
+        run: |
+          UDID="$(xcrun simctl list devices available --json \
+            | jq -r '[.devices[] | .[] | select(.isAvailable and (.name | startswith("iPhone")))] | first | .udid')"
+          [[ -n "$UDID" && "$UDID" != "null" ]] || { xcrun simctl list devices available; exit 1; }
+          echo "SIMULATOR_UDID=$UDID" >> "$GITHUB_ENV"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          APP_PATH="$(find build/Build/Products/Debug-iphonesimulator -maxdepth 1 -name 'BankaiBuddy.app' | head -1)"
+          [[ -n "$APP_PATH" ]] || { echo "BankaiBuddy.app not found"; exit 1; }
+          xcrun simctl install booted "$APP_PATH"
+          xcrun simctl launch booted TonyB-224.BankaiBuddy
+          sleep 10
+          xcrun simctl io booted screenshot launch.png
+
+      - name: Upload launch screenshot
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: simulator-launch-${{ github.run_id }}
+          path: launch.png
+          retention-days: 14
