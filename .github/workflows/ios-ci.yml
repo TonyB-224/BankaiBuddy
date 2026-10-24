@@ -108,7 +108,6 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             ARCHS=arm64 \
             ONLY_ACTIVE_ARCH=YES \
-            SWIFT_ENABLE_EXPLICIT_MODULES=NO \
             CLANG_ENABLE_EXPLICIT_MODULES=NO || echo "first-pass Debug build done (failures expected until module maps are unified)"
 
       - name: Unify generated module maps across packages
@@ -158,7 +157,6 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             ARCHS=arm64 \
             ONLY_ACTIVE_ARCH=YES \
-            SWIFT_ENABLE_EXPLICIT_MODULES=NO \
             CLANG_ENABLE_EXPLICIT_MODULES=NO || echo "second-pass Debug build done; unifying module maps and retrying"
 
       - name: Unify generated module maps across packages
@@ -208,7 +206,6 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             ARCHS=arm64 \
             ONLY_ACTIVE_ARCH=YES \
-            SWIFT_ENABLE_EXPLICIT_MODULES=NO \
             CLANG_ENABLE_EXPLICIT_MODULES=NO
 
       - name: Archive Release, first pass (unsigned, compile check only)
@@ -220,7 +217,6 @@ jobs:
           -sdk iphoneos
           -archivePath build/BankaiBuddy.xcarchive
           CODE_SIGNING_ALLOWED=NO
-          SWIFT_ENABLE_EXPLICIT_MODULES=NO
           CLANG_ENABLE_EXPLICIT_MODULES=NO || echo "first-pass archive done (failures expected until module maps are unified)"
 
       - name: Unify generated module maps across packages
@@ -264,7 +260,6 @@ jobs:
           -sdk iphoneos
           -archivePath build/BankaiBuddy.xcarchive
           CODE_SIGNING_ALLOWED=NO
-          SWIFT_ENABLE_EXPLICIT_MODULES=NO
           CLANG_ENABLE_EXPLICIT_MODULES=NO || echo "second-pass archive done; unifying module maps and retrying"
 
       - name: Unify generated module maps across packages
@@ -308,7 +303,6 @@ jobs:
           -sdk iphoneos
           -archivePath build/BankaiBuddy.xcarchive
           CODE_SIGNING_ALLOWED=NO
-          SWIFT_ENABLE_EXPLICIT_MODULES=NO
           CLANG_ENABLE_EXPLICIT_MODULES=NO
 
       - name: Boot simulator and launch app (proof it fires off)
