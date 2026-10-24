@@ -327,7 +327,7 @@ jobs:
           echo "SIMULATOR_UDID=$UDID" >> "$GITHUB_ENV"
           xcrun simctl boot "$UDID"
           xcrun simctl bootstatus "$UDID" -b
-          APP_PATH="$(find build/Build/Products/Debug-iphonesimulator -maxdepth 1 -name 'BankaiBuddy.app' | head -1)"
+          APP_PATH="$(find build/Debug-iphonesimulator -maxdepth 1 -name 'BankaiBuddy.app' | head -1)"
           [[ -n "$APP_PATH" ]] || { echo "BankaiBuddy.app not found"; exit 1; }
           xcrun simctl install booted "$APP_PATH"
           xcrun simctl launch booted TonyB-224.BankaiBuddy
