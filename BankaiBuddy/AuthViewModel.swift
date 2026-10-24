@@ -22,6 +22,9 @@ final class AuthViewModel {
         handle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             Task { @MainActor in
                 guard let self else { return }
+                #if DEBUG
+                if ScreenshotMode.isEnabled { return }
+                #endif
                 if let user {
                     self.state = .signedIn(uid: user.uid, email: user.email)
                 } else {
@@ -58,6 +61,14 @@ final class AuthViewModel {
         }
         isWorking = false
     }
+
+    #if DEBUG
+    /// CI screenshot mode only: pretend a demo user is signed in so the
+    /// simulator can reach the tabs without Firebase credentials.
+    func enableScreenshotMode() {
+        state = .signedIn(uid: "screenshot-demo", email: "demo@bankaibuddy.app")
+    }
+    #endif
 
     func signOut() {
         do {

@@ -39,6 +39,13 @@ struct SearchView: View {
                 }
             }
             .navigationTitle("Search")
+            .task {
+                // A prefilled query (CI screenshot mode) never trips
+                // onChange, so run the first search on appear.
+                if !searchText.isEmpty && results.isEmpty {
+                    await performSearch(searchText)
+                }
+            }
             .sheet(item: $selected) { anime in
                 AnimeDetailView(anime: anime)
             }
@@ -67,6 +74,11 @@ struct SearchView: View {
             let found = try await JikanService.search(query)
             guard !Task.isCancelled else { return }
             results = found
+            #if DEBUG
+            if ScreenshotMode.isEnabled && ScreenshotMode.autoOpenFirstResult {
+                selected = found.first
+            }
+            #endif
         } catch {
             guard !Task.isCancelled else { return }
             results = []

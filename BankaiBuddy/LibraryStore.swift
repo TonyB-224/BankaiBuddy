@@ -17,6 +17,9 @@ final class LibraryStore {
         authHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             Task { @MainActor in
                 guard let self else { return }
+                #if DEBUG
+                if ScreenshotMode.isEnabled { return }
+                #endif
                 self.detach()
                 if let uid = user?.uid {
                     self.attach(uid: uid)
@@ -29,6 +32,17 @@ final class LibraryStore {
         }
     }
 
+
+    #if DEBUG
+    /// CI screenshot mode only: fill the lists with real Jikan titles so
+    /// Library and Profile screenshots show loaded content, not empty states.
+    func seedScreenshotLibrary() async {
+        guard let top = try? await JikanService.topAiring(), !top.isEmpty else { return }
+        watching = Array(top.prefix(6))
+        favorites = Array(top.dropFirst(6).prefix(4))
+        watched = Array(top.dropFirst(10).prefix(4))
+    }
+    #endif
 
     func list(_ kind: ListKind) -> [Anime] {
         switch kind {
