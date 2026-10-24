@@ -92,10 +92,18 @@ jobs:
           # persisted), and only the x86_64 grpcppWrapper scans fail.
           # Forcing arm64 removes the x86_64 slice entirely; the runner and
           # simulator are arm64, so nothing real is lost.
+          # -sdk iphonesimulator is load-bearing, not redundant: without it,
+          # some package targets resolved SDKROOT to iphoneos (their
+          # default) inside a simulator build, so FirebaseCoreInternal
+          # looked for GoogleUtilities-NSData.modulemap under
+          # GeneratedModuleMaps-iphoneos while it only existed under the
+          # simulator variant. Pinning the SDK keeps every target on
+          # iphonesimulator.
           xcodebuild build \
             -project BankaiBuddy.xcodeproj \
             -target BankaiBuddy \
             -configuration Debug \
+            -sdk iphonesimulator \
             -destination "platform=iOS Simulator,name=$DEVICE" \
             CODE_SIGNING_ALLOWED=NO \
             ARCHS=arm64 \
