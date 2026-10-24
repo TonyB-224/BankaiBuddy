@@ -78,14 +78,22 @@ jobs:
           if [ -n "$BUILD_FILES" ]; then echo "$BUILD_FILES" | while read -r f; do echo "Removing $f"; rm -f "$f"; done; fi
 
       - name: Build Debug for simulator (unsigned)
-        run: >
-          xcodebuild build
-          -project BankaiBuddy.xcodeproj
-          -target BankaiBuddy
-          -configuration Debug
-          -sdk iphonesimulator
-          -destination 'generic/platform=iOS Simulator'
-          CODE_SIGNING_ALLOWED=NO
+        run: |
+          # Build for one concrete arm64 simulator device, not the generic
+          # destination: generic builds arm64 + x86_64, and the x86_64 slice
+          # of grpcppWrapper fails its dependency scan (missing
+          # abslWrapper.modulemap), while the arm64 slice scans fine.
+          DEVICE="$(xcrun simctl list devices available --json             | jq -r '[.devices[] | .[] | select(.isAvailable and (.name | startswith("iPhone")))] | first | .name')"
+          [[ -n "$DEVICE" && "$DEVICE" != "null" ]] || { xcrun simctl list devices available; exit 1; }
+          echo "SIM_DEVICE_NAME=$DEVICE" >> "$GITHUB_ENV"
+          echo "Building for simulator device: $DEVICE"
+          xcodebuild build \
+            -project BankaiBuddy.xcodeproj \
+            -target BankaiBuddy \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination "platform=iOS Simulator,name=$DEVICE" \
+            CODE_SIGNING_ALLOWED=NO
 
       - name: Archive Release (unsigned, compile check only)
         run: >
@@ -99,8 +107,16 @@ jobs:
 
       - name: Boot simulator and launch app (proof it fires off)
         run: |
-          UDID="$(xcrun simctl list devices available --json \
-            | jq -r '[.devices[] | .[] | select(.isAvailable and (.name | startswith("iPhone")))] | first | .udid')"
+          # Boot the same device the build targeted, falling back to the
+          # first available iPhone if the name did not carry over.
+          if [ -n "$SIM_DEVICE_NAME" ]; then
+            UDID="$(xcrun simctl list devices available --json \
+              | jq -r --arg n "$SIM_DEVICE_NAME" '[.devices[] | .[] | select(.isAvailable and (.name == $n))] | first | .udid')"
+          fi
+          if [ -z "$UDID" ] || [ "$UDID" = "null" ]; then
+            UDID="$(xcrun simctl list devices available --json \
+              | jq -r '[.devices[] | .[] | select(.isAvailable and (.name | startswith("iPhone")))] | first | .udid')"
+          fi
           [[ -n "$UDID" && "$UDID" != "null" ]] || { xcrun simctl list devices available; exit 1; }
           echo "SIMULATOR_UDID=$UDID" >> "$GITHUB_ENV"
           xcrun simctl boot "$UDID"
