@@ -5,7 +5,10 @@
 # a real Xcode compile without owning a Mac.
 #
 # What it does:
-#   1. Resolves the Firebase iOS SDK Swift package
+#   1. Resolves the Firebase iOS SDK Swift package (default DerivedData location:
+#      do NOT use -clonedSourcePackagesDirPath — it puts per-package build dirs
+#      inside the checkouts, where nanopb's BUILD file collides with the
+#      build/ directory on the runner's case-insensitive filesystem)
 #   2. Compiles Debug for the iOS Simulator (unsigned)
 #   3. Compiles Release as an unsigned archive (validates the shipping config)
 #   4. Boots the iOS Simulator on the runner, installs the Debug build, launches
@@ -62,7 +65,6 @@ jobs:
         run: >
           xcodebuild -resolvePackageDependencies
           -project BankaiBuddy.xcodeproj
-          -clonedSourcePackagesDirPath SourcePackages
 
       - name: Build Debug for simulator (unsigned)
         run: >
@@ -73,7 +75,6 @@ jobs:
           -sdk iphonesimulator
           -destination 'generic/platform=iOS Simulator'
           CODE_SIGNING_ALLOWED=NO
-          -clonedSourcePackagesDirPath SourcePackages
 
       - name: Archive Release (unsigned, compile check only)
         run: >
@@ -84,7 +85,6 @@ jobs:
           -sdk iphoneos
           -archivePath build/BankaiBuddy.xcarchive
           CODE_SIGNING_ALLOWED=NO
-          -clonedSourcePackagesDirPath SourcePackages
 
       - name: Boot simulator and launch app (proof it fires off)
         run: |
