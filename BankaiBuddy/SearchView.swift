@@ -70,6 +70,17 @@ struct SearchView: View {
         isLoading = true
         searchError = nil
         defer { if !Task.isCancelled { isLoading = false } }
+        #if DEBUG
+        if ScreenshotMode.isEnabled && ScreenshotMode.useDemoData {
+            let found = ScreenshotDemoData.search(query)
+            guard !Task.isCancelled else { return }
+            results = found
+            if ScreenshotMode.autoOpenFirstResult {
+                selected = found.first
+            }
+            return
+        }
+        #endif
         do {
             let found = try await JikanService.search(query)
             guard !Task.isCancelled else { return }

@@ -193,6 +193,13 @@ struct AnimeDetailView: View {
     }
 
     private func loadDetailsIfNeeded() async {
+        #if DEBUG
+        // Staged demo entries carry no streaming links, so without this the
+        // detail shot would sit on the "checking stream homes" spinner
+        // while the dead API times out. The section renders its no-links
+        // state instead.
+        if ScreenshotMode.isEnabled && ScreenshotMode.useDemoData { return }
+        #endif
         guard fullAnime == nil, anime.streamingLinks == nil else { return }
         isLoadingDetails = true
         defer { isLoadingDetails = false }

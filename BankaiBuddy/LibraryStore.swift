@@ -37,6 +37,13 @@ final class LibraryStore {
     /// CI screenshot mode only: fill the lists with real Jikan titles so
     /// Library and Profile screenshots show loaded content, not empty states.
     func seedScreenshotLibrary() async {
+        if ScreenshotMode.useDemoData {
+            let demo = ScreenshotDemoData.all
+            watching = Array(demo.prefix(6))
+            favorites = Array(demo.dropFirst(6).prefix(4))
+            watched = Array(demo.dropFirst(10).prefix(4))
+            return
+        }
         guard let top = try? await JikanService.topAiring(), !top.isEmpty else { return }
         watching = Array(top.prefix(6))
         favorites = Array(top.dropFirst(6).prefix(4))

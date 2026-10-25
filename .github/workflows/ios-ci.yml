@@ -336,21 +336,31 @@ jobs:
           sleep 10
           xcrun simctl io booted screenshot screenshots/01-auth.png
           xcrun simctl terminate booted TonyB-224.BankaiBuddy
-          # Probe the data source first so the log says whether Jikan was
-          # up for this run; a hanging API looks identical to a broken app
-          # in a screenshot, and this tells them apart.
+          # Probe the data source first. A hanging API looks identical to
+          # a broken app in a screenshot; the probe tells them apart, and
+          # when it fails the shots fall back to staged demo data so a
+          # down API can't block the listing set. Live data wins whenever
+          # the probe passes.
           echo "--- Jikan probe ---"
-          curl -s -o /dev/null -w "topAiring: HTTP %{http_code} in %{time_total}s\n" --max-time 25 "https://api.jikan.moe/v4/top/anime?filter=airing&limit=1" || echo "topAiring probe failed"
-          curl -s -o /dev/null -w "search: HTTP %{http_code} in %{time_total}s\n" --max-time 25 "https://api.jikan.moe/v4/anime?q=Naruto&limit=1" || echo "search probe failed"
+          if curl -sf -o /dev/null -w "topAiring: HTTP %{http_code} in %{time_total}s\n" --max-time 25 "https://api.jikan.moe/v4/top/anime?filter=airing&limit=1" && curl -sf -o /dev/null -w "search: HTTP %{http_code} in %{time_total}s\n" --max-time 25 "https://api.jikan.moe/v4/anime?q=Naruto&limit=1"; then
+            JIKAN_UP=1
+            echo "Jikan is up: screenshots will use live data."
+          else
+            JIKAN_UP=0
+            echo "Jikan probe failed: screenshots will use staged demo data."
+          fi
           # Screenshot-mode launches: one per screen, each showing that
-          # screen loaded with real Jikan data. The app is relaunched
-          # (not reinstalled) with the tab/query as launch arguments.
+          # screen loaded. The app is relaunched (not reinstalled) with
+          # the tab/query as launch arguments.
           shot() {
-            if [ -n "$2" ]; then
-              xcrun simctl launch booted TonyB-224.BankaiBuddy -BankaiBuddyScreenshotMode -BankaiBuddyScreenshotTab "$1" -BankaiBuddyScreenshotQuery "$2"
-            else
-              xcrun simctl launch booted TonyB-224.BankaiBuddy -BankaiBuddyScreenshotMode -BankaiBuddyScreenshotTab "$1"
+            args=(-BankaiBuddyScreenshotMode -BankaiBuddyScreenshotTab "$1")
+            if [ "$JIKAN_UP" = "0" ]; then
+              args+=(-BankaiBuddyScreenshotDemoData)
             fi
+            if [ -n "$2" ]; then
+              args+=(-BankaiBuddyScreenshotQuery "$2")
+            fi
+            xcrun simctl launch booted TonyB-224.BankaiBuddy "${args[@]}"
             sleep 30
             xcrun simctl io booted screenshot "screenshots/$3"
             # Data shots get a second, late frame past URLSession's 60s

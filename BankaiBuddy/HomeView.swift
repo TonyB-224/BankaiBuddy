@@ -165,6 +165,13 @@ struct HomeView: View {
     private func load() async {
         isLoading = true
         loadError = nil
+        #if DEBUG
+        if ScreenshotMode.isEnabled && ScreenshotMode.useDemoData {
+            topAiring = ScreenshotDemoData.all
+            isLoading = false
+            return
+        }
+        #endif
         do {
             topAiring = try await JikanService.topAiring()
         } catch {

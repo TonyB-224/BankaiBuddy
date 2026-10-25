@@ -10,10 +10,17 @@ import Foundation
 /// Screens: `-BankaiBuddyScreenshotTab home|search|library|profile`, plus
 /// `-BankaiBuddyScreenshotQuery <text>` to prefill Search. `detail` is not
 /// a tab: it opens the Search tab with the query and auto-opens the first
-/// result's detail sheet.
+/// result's detail sheet. `-BankaiBuddyScreenshotDemoData` swaps live Jikan
+/// calls for the staged demo set (ScreenshotDemoData) so listing shots can
+/// be captured while the API is down; the CI step adds it only when its
+/// Jikan probe fails.
 enum ScreenshotMode {
     static var isEnabled: Bool {
         ProcessInfo.processInfo.arguments.contains("-BankaiBuddyScreenshotMode")
+    }
+
+    static var useDemoData: Bool {
+        ProcessInfo.processInfo.arguments.contains("-BankaiBuddyScreenshotDemoData")
     }
 
     static var tab: String {
