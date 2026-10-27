@@ -8,8 +8,16 @@ struct BankaiBuddyApp: App {
 
     init() {
         FirebaseApp.configure()
-        _auth = State(wrappedValue: AuthViewModel())
-        _library = State(wrappedValue: LibraryStore())
+        let auth = AuthViewModel()
+        let library = LibraryStore()
+        #if DEBUG
+        if ScreenshotMode.isEnabled {
+            auth.enableScreenshotMode()
+            Task { await library.seedScreenshotLibrary() }
+        }
+        #endif
+        _auth = State(wrappedValue: auth)
+        _library = State(wrappedValue: library)
     }
 
     var body: some Scene {
@@ -17,7 +25,7 @@ struct BankaiBuddyApp: App {
             RootView()
                 .environment(auth)
                 .environment(library)
-                .tint(.indigo)
+                .tint(BrandKit.indigo)
         }
     }
 }

@@ -16,6 +16,7 @@ struct AnimeDetailView: View {
                     poster
                     titleBlock
                     actionButtons
+                    progressSection
                     streamingSection
                     if let synopsis = displayAnime.synopsis, !synopsis.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
@@ -31,6 +32,21 @@ struct AnimeDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             .task { await loadDetailsIfNeeded() }
             .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    if let detailURL = displayAnime.detailURL {
+                        ShareLink(
+                            item: detailURL,
+                            subject: Text(displayAnime.title),
+                            message: Text(displayAnime.title)
+                        ) {
+                            Image(systemName: "square.and.arrow.up")
+                        }
+                    } else {
+                        ShareLink(item: displayAnime.title) {
+                            Image(systemName: "square.and.arrow.up")
+                        }
+                    }
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
@@ -39,12 +55,22 @@ struct AnimeDetailView: View {
     }
 
     private var poster: some View {
-        AsyncImage(url: displayAnime.posterURL) { image in
-            image.resizable().scaledToFit()
-        } placeholder: {
-            Rectangle().fill(.quaternary)
-                .frame(height: 320)
-                .overlay(ProgressView())
+        AsyncImage(url: displayAnime.posterURL) { phase in
+            switch phase {
+            case .success(let image):
+                image.resizable().scaledToFit()
+            case .empty:
+                Rectangle().fill(.quaternary)
+                    .frame(height: 320)
+                    .overlay(ProgressView())
+            case .failure:
+                Rectangle().fill(.quaternary)
+                    .frame(height: 320)
+                    .overlay(Image(systemName: "photo").foregroundStyle(.secondary))
+            @unknown default:
+                Rectangle().fill(.quaternary)
+                    .frame(height: 320)
+            }
         }
         .frame(maxHeight: 320)
         .clipShape(.rect(cornerRadius: 18, style: .continuous))
@@ -114,6 +140,46 @@ struct AnimeDetailView: View {
     }
 
     @ViewBuilder
+    private var progressSection: some View {
+        if let entry = library.list(.watching).first(where: { $0.id == displayAnime.id }) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Your progress")
+                    .font(.headline)
+                HStack {
+                    Text(progressText(for: entry))
+                        .font(.subheadline.weight(.semibold))
+                    Spacer()
+                    Button {
+                        Task { await library.setProgress(entry, to: entry.progress - 1) }
+                    } label: {
+                        Image(systemName: "minus.circle.fill")
+                            .font(.title2)
+                    }
+                    .disabled(entry.progress <= 0)
+                    Button {
+                        Task { await library.setProgress(entry, to: entry.progress + 1) }
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title2)
+                    }
+                    .disabled(entry.episodes.map { entry.progress >= $0 } ?? false)
+                }
+                .foregroundStyle(BrandKit.indigo)
+            }
+            .padding(16)
+            .background(.regularMaterial, in: .rect(cornerRadius: 18, style: .continuous))
+            .padding(.horizontal)
+        }
+    }
+
+    private func progressText(for entry: Anime) -> String {
+        if let episodes = entry.episodes {
+            return "Episode \(entry.progress) of \(episodes)"
+        }
+        return "Episode \(entry.progress)"
+    }
+
+    @ViewBuilder
     private var streamingSection: some View {
         let links = displayAnime.streamableLinks
         if !links.isEmpty || isLoadingDetails || displayAnime.detailURL != nil {
@@ -129,7 +195,7 @@ struct AnimeDetailView: View {
                 }
 
                 if links.isEmpty {
-                    Text("Checking official stream homes...")
+                    Text(isLoadingDetails ? "Checking official stream homes..." : "No official stream links found.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 } else {
@@ -168,6 +234,13 @@ struct AnimeDetailView: View {
     }
 
     private func loadDetailsIfNeeded() async {
+        #if DEBUG
+        // Staged demo entries carry no streaming links, so without this the
+        // detail shot would sit on the "checking stream homes" spinner
+        // while the dead API times out. The section renders its no-links
+        // state instead.
+        if ScreenshotMode.isEnabled && ScreenshotMode.useDemoData { return }
+        #endif
         guard fullAnime == nil, anime.streamingLinks == nil else { return }
         isLoadingDetails = true
         defer { isLoadingDetails = false }

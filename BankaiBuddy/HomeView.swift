@@ -15,7 +15,7 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     hero
                     statsRow
-                    worldFluencySection
+                    continueWatchingSection
                     topAiringSection
                 }
                 .padding(.vertical)
@@ -93,30 +93,28 @@ struct HomeView: View {
         .padding(.horizontal)
     }
 
-    private var worldFluencySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Fan fluency")
-                .font(.title2.bold())
-                .padding(.horizontal)
+    private var continueWatchingSection: some View {
+        let items = library.list(.watching)
+        return Group {
+            if !items.isEmpty {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Continue watching")
+                        .font(.title2.bold())
+                        .padding(.horizontal)
 
-            VStack(spacing: 10) {
-                HomeInsightRow(
-                    icon: "character.bubble.fill",
-                    title: "Native titles stay visible",
-                    message: "Detail pages surface Japanese titles when the source includes them."
-                )
-                HomeInsightRow(
-                    icon: "play.tv.fill",
-                    title: "Streaming homes included",
-                    message: "Open provider links from the anime detail screen when Jikan has official stream data."
-                )
-                HomeInsightRow(
-                    icon: "books.vertical.fill",
-                    title: "Your lists travel with you",
-                    message: "Watched, Need to Watch, and Favorites sync per user through Firebase."
-                )
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 14) {
+                            ForEach(items) { anime in
+                                Button { selected = anime } label: {
+                                    PosterCard(anime: anime, showsProgress: true)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                }
             }
-            .padding(.horizontal)
         }
     }
 
@@ -139,6 +137,13 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity, minHeight: 200)
             } else if let loadError {
                 ContentUnavailableView("Couldn't load", systemImage: "wifi.exclamationmark", description: Text(loadError))
+            } else if topAiring.isEmpty {
+                ContentUnavailableView(
+                    "Nothing airing right now",
+                    systemImage: "tv.slash",
+                    description: Text("Check back soon for fresh picks.")
+                )
+                .frame(maxWidth: .infinity, minHeight: 200)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 14) {
@@ -158,6 +163,13 @@ struct HomeView: View {
     private func load() async {
         isLoading = true
         loadError = nil
+        #if DEBUG
+        if ScreenshotMode.isEnabled && ScreenshotMode.useDemoData {
+            topAiring = ScreenshotDemoData.all
+            isLoading = false
+            return
+        }
+        #endif
         do {
             topAiring = try await JikanService.topAiring()
         } catch {
@@ -167,35 +179,11 @@ struct HomeView: View {
     }
 }
 
-private struct HomeInsightRow: View {
-    let icon: String
-    let title: String
-    let message: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: icon)
-                .font(.headline)
-                .foregroundStyle(BrandKit.gold)
-                .frame(width: 32, height: 32)
-                .background(BrandKit.gold.opacity(0.13), in: .circle)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                Text(message)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(.regularMaterial, in: .rect(cornerRadius: 18, style: .continuous))
-    }
-}
-
 struct PosterCard: View {
     let anime: Anime
+    /// Show the episode counter under the title. Only true for the
+    /// user's own watching entries; catalog rows carry no progress.
+    var showsProgress: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -220,6 +208,12 @@ struct PosterCard: View {
                 .font(.caption.weight(.medium))
                 .lineLimit(2)
                 .frame(width: 140, alignment: .leading)
+
+            if showsProgress, let label = anime.progressLabel {
+                Text(label)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
 
             if let score = anime.score {
                 Label(String(format: "%.1f", score), systemImage: "star.fill")

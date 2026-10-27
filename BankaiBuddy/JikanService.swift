@@ -24,15 +24,46 @@ enum JikanService {
 
     static func fullDetails(for anime: Anime) async throws -> Anime {
         let url = base.appendingPathComponent("anime/\(anime.id)/full")
-        let (data, _) = try await URLSession.shared.data(from: url)
+        let (data, response) = try await URLSession.shared.data(from: url)
+        try validate(response)
         let decoded = try JSONDecoder().decode(JikanSingleResponse.self, from: data)
         return decoded.data.asAnime
     }
 
     private static func fetch(_ url: URL) async throws -> [Anime] {
-        let (data, _) = try await URLSession.shared.data(from: url)
+        let (data, response) = try await URLSession.shared.data(from: url)
+        try validate(response)
         let decoded = try JSONDecoder().decode(JikanResponse.self, from: data)
         return decoded.data.map { $0.asAnime }
+    }
+
+    /// Jikan answers rate limits and outages with an error payload, not a
+    /// transport error, so a bare `data(from:)` call would surface a cryptic
+    /// decode failure. Surface a readable message instead.
+    private static func validate(_ response: URLResponse) throws {
+        guard let http = response as? HTTPURLResponse else { return }
+        switch http.statusCode {
+        case 200..<300:
+            return
+        case 429:
+            throw JikanError.rateLimited
+        default:
+            throw JikanError.server(status: http.statusCode)
+        }
+    }
+}
+
+enum JikanError: LocalizedError {
+    case rateLimited
+    case server(status: Int)
+
+    var errorDescription: String? {
+        switch self {
+        case .rateLimited:
+            return "Jikan is rate-limiting requests right now. Try again in a moment."
+        case .server(let status):
+            return "The anime database returned an error (HTTP \(status)). Try again."
+        }
     }
 }
 

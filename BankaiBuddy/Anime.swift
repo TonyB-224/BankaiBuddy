@@ -12,10 +12,57 @@ struct Anime: Identifiable, Codable, Hashable {
     let titleJapanese: String?
     let genres: [String]?
     let streamingLinks: [StreamingLink]?
+    /// Episodes watched, tracked on the user's watching-list entry.
+    /// A `var` with a default, deliberately: a `let` with a default
+    /// value is already initialized at declaration, so neither the
+    /// memberwise initializer nor an explicit one may set it again.
+    /// The default keeps older Firestore docs and API payloads
+    /// without this key decoding to 0.
+    var progress: Int = 0
+
+    /// Explicit initializer: the memberwise one drops defaulted
+    /// properties from its parameter list, so `progress:` is not
+    /// accepted there. This keeps every call site compiling with
+    /// progress defaulting to 0 unless given.
+    init(
+        id: Int, title: String, imageURL: String?, synopsis: String?,
+        score: Double?, episodes: Int?, year: Int?, malURL: String?,
+        titleJapanese: String?, genres: [String]?,
+        streamingLinks: [StreamingLink]?, progress: Int = 0
+    ) {
+        self.id = id
+        self.title = title
+        self.imageURL = imageURL
+        self.synopsis = synopsis
+        self.score = score
+        self.episodes = episodes
+        self.year = year
+        self.malURL = malURL
+        self.titleJapanese = titleJapanese
+        self.genres = genres
+        self.streamingLinks = streamingLinks
+        self.progress = progress
+    }
 
     var posterURL: URL? { imageURL.flatMap(URL.init) }
     var detailURL: URL? { malURL.flatMap(URL.init) }
     var streamableLinks: [StreamingLink] { streamingLinks ?? [] }
+
+    /// "Ep 3 of 12", "Ep 3", or nil when nothing has been watched yet.
+    var progressLabel: String? {
+        guard progress > 0 else { return nil }
+        if let episodes { return "Ep \(progress) of \(episodes)" }
+        return "Ep \(progress)"
+    }
+
+    func withProgress(_ newValue: Int) -> Anime {
+        Anime(
+            id: id, title: title, imageURL: imageURL, synopsis: synopsis,
+            score: score, episodes: episodes, year: year, malURL: malURL,
+            titleJapanese: titleJapanese, genres: genres,
+            streamingLinks: streamingLinks, progress: newValue
+        )
+    }
 }
 
 struct StreamingLink: Codable, Hashable, Identifiable {

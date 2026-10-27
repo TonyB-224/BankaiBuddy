@@ -4,6 +4,7 @@ struct SearchView: View {
     @Binding var searchText: String
     @State private var results: [Anime] = []
     @State private var isLoading = false
+    @State private var searchError: String?
     @State private var selected: Anime?
     @State private var searchTask: Task<Void, Never>?
 
@@ -19,6 +20,12 @@ struct SearchView: View {
                 } else if isLoading {
                     ProgressView().controlSize(.large)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let searchError {
+                    ContentUnavailableView(
+                        "Couldn't search",
+                        systemImage: "wifi.exclamationmark",
+                        description: Text(searchError)
+                    )
                 } else if results.isEmpty {
                     ContentUnavailableView.search(text: searchText)
                 } else {
@@ -32,6 +39,13 @@ struct SearchView: View {
                 }
             }
             .navigationTitle("Search")
+            .task {
+                // A prefilled query (CI screenshot mode) never trips
+                // onChange, so run the first search on appear.
+                if !searchText.isEmpty && results.isEmpty {
+                    await performSearch(searchText)
+                }
+            }
             .sheet(item: $selected) { anime in
                 AnimeDetailView(anime: anime)
             }
@@ -39,6 +53,8 @@ struct SearchView: View {
                 searchTask?.cancel()
                 guard !newValue.trimmingCharacters(in: .whitespaces).isEmpty else {
                     results = []
+                    searchError = nil
+                    isLoading = false
                     return
                 }
                 searchTask = Task {
@@ -52,11 +68,32 @@ struct SearchView: View {
 
     private func performSearch(_ query: String) async {
         isLoading = true
-        defer { isLoading = false }
+        searchError = nil
+        defer { if !Task.isCancelled { isLoading = false } }
+        #if DEBUG
+        if ScreenshotMode.isEnabled && ScreenshotMode.useDemoData {
+            let found = ScreenshotDemoData.search(query)
+            guard !Task.isCancelled else { return }
+            results = found
+            if ScreenshotMode.autoOpenFirstResult {
+                selected = found.first
+            }
+            return
+        }
+        #endif
         do {
-            results = try await JikanService.search(query)
+            let found = try await JikanService.search(query)
+            guard !Task.isCancelled else { return }
+            results = found
+            #if DEBUG
+            if ScreenshotMode.isEnabled && ScreenshotMode.autoOpenFirstResult {
+                selected = found.first
+            }
+            #endif
         } catch {
+            guard !Task.isCancelled else { return }
             results = []
+            searchError = error.localizedDescription
         }
     }
 }
@@ -66,10 +103,18 @@ struct SearchRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            AsyncImage(url: anime.posterURL) { image in
-                image.resizable().scaledToFill()
-            } placeholder: {
-                Rectangle().fill(.quaternary)
+            AsyncImage(url: anime.posterURL) { phase in
+                switch phase {
+                case .success(let image):
+                    image.resizable().scaledToFill()
+                case .empty:
+                    Rectangle().fill(.quaternary)
+                case .failure:
+                    Rectangle().fill(.quaternary)
+                        .overlay(Image(systemName: "photo").font(.caption).foregroundStyle(.secondary))
+                @unknown default:
+                    Rectangle().fill(.quaternary)
+                }
             }
             .frame(width: 56, height: 80)
             .clipShape(.rect(cornerRadius: 8))

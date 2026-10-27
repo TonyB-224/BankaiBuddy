@@ -17,6 +17,9 @@ final class LibraryStore {
         authHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             Task { @MainActor in
                 guard let self else { return }
+                #if DEBUG
+                if ScreenshotMode.isEnabled { return }
+                #endif
                 self.detach()
                 if let uid = user?.uid {
                     self.attach(uid: uid)
@@ -29,6 +32,24 @@ final class LibraryStore {
         }
     }
 
+
+    #if DEBUG
+    /// CI screenshot mode only: fill the lists with real Jikan titles so
+    /// Library and Profile screenshots show loaded content, not empty states.
+    func seedScreenshotLibrary() async {
+        if ScreenshotMode.useDemoData {
+            let demo = ScreenshotDemoData.all
+            watching = Array(demo.prefix(6))
+            favorites = Array(demo.dropFirst(6).prefix(4))
+            watched = Array(demo.dropFirst(10).prefix(4))
+            return
+        }
+        guard let top = try? await JikanService.topAiring(), !top.isEmpty else { return }
+        watching = Array(top.prefix(6))
+        favorites = Array(top.dropFirst(6).prefix(4))
+        watched = Array(top.dropFirst(10).prefix(4))
+    }
+    #endif
 
     func list(_ kind: ListKind) -> [Anime] {
         switch kind {
@@ -56,6 +77,24 @@ final class LibraryStore {
             }
         } catch {
             print("toggle error:", error.localizedDescription)
+        }
+    }
+
+    /// Move the episode counter on a watching-list entry. Only touches
+    /// the watching doc: progress belongs to the watchlist entry, and
+    /// writing to a list the anime is not in would silently add it there.
+    func setProgress(_ anime: Anime, to value: Int) async {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        guard let current = watching.first(where: { $0.id == anime.id }) else { return }
+        let clamped = max(0, current.episodes.map { min(value, $0) } ?? value)
+        guard clamped != current.progress else { return }
+        let doc = Firestore.firestore()
+            .collection("users").document(uid)
+            .collection(ListKind.watching.rawValue).document(String(anime.id))
+        do {
+            try doc.setData(from: current.withProgress(clamped))
+        } catch {
+            print("progress error:", error.localizedDescription)
         }
     }
 
