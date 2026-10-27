@@ -13,9 +13,12 @@ struct Anime: Identifiable, Codable, Hashable {
     let genres: [String]?
     let streamingLinks: [StreamingLink]?
     /// Episodes watched, tracked on the user's watching-list entry.
-    /// Defaults to 0 so older Firestore docs and API payloads without
-    /// this key still decode.
-    let progress: Int = 0
+    /// A `var` with a default, deliberately: a `let` with a default
+    /// value is already initialized at declaration, so neither the
+    /// memberwise initializer nor an explicit one may set it again.
+    /// The default keeps older Firestore docs and API payloads
+    /// without this key decoding to 0.
+    var progress: Int = 0
 
     /// Explicit initializer: the memberwise one drops defaulted
     /// properties from its parameter list, so `progress:` is not
