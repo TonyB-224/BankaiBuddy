@@ -16,6 +16,7 @@ struct AnimeDetailView: View {
                     poster
                     titleBlock
                     actionButtons
+                    progressSection
                     streamingSection
                     if let synopsis = displayAnime.synopsis, !synopsis.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
@@ -136,6 +137,46 @@ struct AnimeDetailView: View {
             }
         }
         .padding(.horizontal)
+    }
+
+    @ViewBuilder
+    private var progressSection: some View {
+        if let entry = library.list(.watching).first(where: { $0.id == displayAnime.id }) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Your progress")
+                    .font(.headline)
+                HStack {
+                    Text(progressText(for: entry))
+                        .font(.subheadline.weight(.semibold))
+                    Spacer()
+                    Button {
+                        Task { await library.setProgress(entry, to: entry.progress - 1) }
+                    } label: {
+                        Image(systemName: "minus.circle.fill")
+                            .font(.title2)
+                    }
+                    .disabled(entry.progress <= 0)
+                    Button {
+                        Task { await library.setProgress(entry, to: entry.progress + 1) }
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title2)
+                    }
+                    .disabled(entry.episodes.map { entry.progress >= $0 } ?? false)
+                }
+                .foregroundStyle(BrandKit.indigo)
+            }
+            .padding(16)
+            .background(.regularMaterial, in: .rect(cornerRadius: 18, style: .continuous))
+            .padding(.horizontal)
+        }
+    }
+
+    private func progressText(for entry: Anime) -> String {
+        if let episodes = entry.episodes {
+            return "Episode \(entry.progress) of \(episodes)"
+        }
+        return "Episode \(entry.progress)"
     }
 
     @ViewBuilder

@@ -80,6 +80,24 @@ final class LibraryStore {
         }
     }
 
+    /// Move the episode counter on a watching-list entry. Only touches
+    /// the watching doc: progress belongs to the watchlist entry, and
+    /// writing to a list the anime is not in would silently add it there.
+    func setProgress(_ anime: Anime, to value: Int) async {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        guard let current = watching.first(where: { $0.id == anime.id }) else { return }
+        let clamped = max(0, current.episodes.map { min(value, $0) } ?? value)
+        guard clamped != current.progress else { return }
+        let doc = Firestore.firestore()
+            .collection("users").document(uid)
+            .collection(ListKind.watching.rawValue).document(String(anime.id))
+        do {
+            try doc.setData(from: current.withProgress(clamped))
+        } catch {
+            print("progress error:", error.localizedDescription)
+        }
+    }
+
     private func attach(uid: String) {
         let db = Firestore.firestore()
         for kind in ListKind.allCases {

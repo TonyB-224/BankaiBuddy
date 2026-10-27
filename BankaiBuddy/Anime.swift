@@ -12,10 +12,30 @@ struct Anime: Identifiable, Codable, Hashable {
     let titleJapanese: String?
     let genres: [String]?
     let streamingLinks: [StreamingLink]?
+    /// Episodes watched, tracked on the user's watching-list entry.
+    /// Defaults to 0 so older Firestore docs and API payloads without
+    /// this key still decode.
+    let progress: Int = 0
 
     var posterURL: URL? { imageURL.flatMap(URL.init) }
     var detailURL: URL? { malURL.flatMap(URL.init) }
     var streamableLinks: [StreamingLink] { streamingLinks ?? [] }
+
+    /// "Ep 3 of 12", "Ep 3", or nil when nothing has been watched yet.
+    var progressLabel: String? {
+        guard progress > 0 else { return nil }
+        if let episodes { return "Ep \(progress) of \(episodes)" }
+        return "Ep \(progress)"
+    }
+
+    func withProgress(_ newValue: Int) -> Anime {
+        Anime(
+            id: id, title: title, imageURL: imageURL, synopsis: synopsis,
+            score: score, episodes: episodes, year: year, malURL: malURL,
+            titleJapanese: titleJapanese, genres: genres,
+            streamingLinks: streamingLinks, progress: newValue
+        )
+    }
 }
 
 struct StreamingLink: Codable, Hashable, Identifiable {

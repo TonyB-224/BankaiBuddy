@@ -142,24 +142,13 @@ struct AuthView: View {
     }
 
     private var globalPromise: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Label("Built for fans who jump between regions, dubs, subs, queues, and streaming homes.", systemImage: "sparkle.magnifyingglass")
-                .font(.footnote.weight(.medium))
-            HStack(spacing: 7) {
-                Text("Find it")
-                Image(systemName: "arrow.right")
-                Text("stash it")
-                Image(systemName: "arrow.right")
-                Text("watch it where it lives")
-            }
-            .font(.caption)
-            .foregroundStyle(.white.opacity(0.7))
-            .lineLimit(2)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(.black.opacity(0.18), in: .rect(cornerRadius: 18, style: .continuous))
-        .padding(.horizontal, 20)
+        Text("Keep track of what you're watching and what's next. Your lists sync to your account, and you can share them with friends nearby.")
+            .font(.footnote)
+            .foregroundStyle(.white.opacity(0.75))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .background(.black.opacity(0.18), in: .rect(cornerRadius: 18, style: .continuous))
+            .padding(.horizontal, 20)
     }
 
     private func submit() {
