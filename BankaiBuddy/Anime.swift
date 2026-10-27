@@ -17,6 +17,30 @@ struct Anime: Identifiable, Codable, Hashable {
     /// this key still decode.
     let progress: Int = 0
 
+    /// Explicit initializer: the memberwise one drops defaulted
+    /// properties from its parameter list, so `progress:` is not
+    /// accepted there. This keeps every call site compiling with
+    /// progress defaulting to 0 unless given.
+    init(
+        id: Int, title: String, imageURL: String?, synopsis: String?,
+        score: Double?, episodes: Int?, year: Int?, malURL: String?,
+        titleJapanese: String?, genres: [String]?,
+        streamingLinks: [StreamingLink]?, progress: Int = 0
+    ) {
+        self.id = id
+        self.title = title
+        self.imageURL = imageURL
+        self.synopsis = synopsis
+        self.score = score
+        self.episodes = episodes
+        self.year = year
+        self.malURL = malURL
+        self.titleJapanese = titleJapanese
+        self.genres = genres
+        self.streamingLinks = streamingLinks
+        self.progress = progress
+    }
+
     var posterURL: URL? { imageURL.flatMap(URL.init) }
     var detailURL: URL? { malURL.flatMap(URL.init) }
     var streamableLinks: [StreamingLink] { streamingLinks ?? [] }
